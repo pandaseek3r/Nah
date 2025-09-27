@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>기기 정보 저장소 데모</title>
+  <style>
+    body{font-family:Arial;margin:24px}
+    .box{max-width:720px;margin:auto}
+    button{padding:10px 16px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5}
+    label{display:block;margin:12px 0}
+    .modal{border:1px solid #ddd;padding:16px;border-radius:8px;background:#fff}
+    .small{font-size:0.9rem;color:#666}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>기기 정보 전송 (데모)</h1>
+    <div class="modal">
+      <p>개인정보 이용 동의 후 버튼 클릭</p>
+      <label><input type="checkbox" id="consent"> 동의합니다.</label>
+      <button id="sendBtn">기기 정보 전송</button>
+      <p id="status" class="small"></p>
+    </div>
+    <hr />
+    <h2>보관소(비밀번호 필요)</h2>
+    <label>비밀번호: <input type="password" id="vaultPwd"></label>
+    <button id="openVault">보관소 열기</button>
+    <div id="vaultContent"></div>
+  </div>
+
+<script>
+const apiBase = '';
+function getDeviceInfo(){
+  return {
+    id:'r-'+Math.random().toString(36).slice(2,10),
+    userAgent:navigator.userAgent,
+    screenWidth:screen.width,
+    screenHeight:screen.height,
+    timestamp:new Date().toISOString()
+  };
+}
+document.getElementById('sendBtn').addEventListener('click', async ()=>{
+  const consent=document.getElementById('consent').checked;
+  const status=document.getElementById('status');
+  if(!consent){status.textContent='동의가 필요합니다.';return;}
+  const info=getDeviceInfo();
+  status.textContent='전송 중...';
+  try{
+    const res=await fetch(apiBase+'/api/store',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(info)
+    });
+    if(res.ok){status.textContent='전송 완료!';}
+    else{status.textContent='오류: '+await res.text();}
+  }catch(e){status.textContent='통신 오류: '+e.message;}
+});
+document.getElementById('openVault').addEventListener('click', async ()=>{
+  const pwd=document.getElementById('vaultPwd').value;
+  const vaultDiv=document.getElementById('vaultContent');
+  vaultDiv.textContent='로딩...';
+  try{
+    const res=await fetch(apiBase+'/api/vault',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})
+    });
+    if(res.ok){
+      const list=await res.json();
+      if(list.length===0){vaultDiv.textContent='보관소가 비어 있습니다.';return;}
+      vaultDiv.innerHTML=list.map(it=>`<div style="border-bottom:1px solid #eee;padding:8px 0">
+        <div><strong>id:</strong>${it.id} <span class="small">(${it.timestamp})</span></div>
+        <div class="small">${it.userAgent}</div>
+        <div class="small">해상도:${it.screenWidth}×${it.screenHeight}</div>
+      </div>`).join('');
+    }else{vaultDiv.textContent='접근 불가: '+await res.text();}
+  }catch(e){vaultDiv.textContent='통신 오류: '+e.message;}
+});
+</script>
+</body>
+</html>

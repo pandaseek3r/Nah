@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>보관함 로그인</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      text-align: center;
+      width: 300px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login">
+    <h2>보관함 로그인</h2>
+    <input type="password" id="password" placeholder="비밀번호 입력">
+    <button onclick="login()">로그인</button>
+  </div>
+
+  <div class="container" id="main" style="display:none;">
+    <h2>보관함</h2>
+    <button onclick="sendInfo()">내 정보 보관</button>
+    <button onclick="viewInfo()">보관된 정보 보기</button>
+    <pre id="output"></pre>
+  </div>
+
+  <script>
+    async function login() {
+      const password = document.getElementById('password').value;
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ password })
+      });
+      if (res.ok) {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('main').style.display = 'block';
+      } else {
+        alert('비밀번호가 틀렸습니다.');
+      }
+    }
+
+    async function sendInfo() {
+      await fetch('/store', { method: 'POST' });
+      alert('내 기기 정보가 보관되었습니다!');
+    }
+
+    async function viewInfo() {
+      const res = await fetch('/list');
+      const data = await res.json();
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
